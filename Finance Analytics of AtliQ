@@ -1,0 +1,106 @@
+# portfolioProject
+# As a product owner i want to generate a report of idividual product sales
+-- aggregated on a monthly basis at the product code level for croma for FY=2021
+-- SO that i can track individual product sales and run further product analytics on excel
+
+# the report should have the following fields.
+
+-- 1. Month
+-- 2. product name
+-- 3. variant
+-- 4. sold quantity
+-- 5. gross price per item
+-- 6. gross price total
+
+
+with cte as (
+select dp.product,dp.variant,(fs.sold_quantity/fg.gross_price) as gross_price_per_item  from fact_sales_monthly fs
+join dim_product dp on fs.product_code=dp.product_code
+join fact_gross_price fg on fs.product_code=fg.product_code
+where customer_code=90002002
+and year(fs.date)=2021
+group by dp.variant)
+
+select *,  sum(gross_price_per_item)  from cte  ;
+
+select * from fact_sales_monthly 
+where customer_code=90002002
+and year(date)=2021
+order by date desc;
+
+-- atliq fiscal year start in september
+-- if calender_year is 2020 then fiscal year of atliq is 2021
+
+select *, year(date_add(date,interval 4 month)) as fiscal_year from fact_sales_monthly;
+
+
+select * from fact_sales_monthly 
+where customer_code=90002002 AND GET_FISCAL_YEAR(date)
+ =2021
+order by date desc;
+
+-- 9,10,11 --> Q1
+-- 12,1,2 -->  Q2
+-- 3,4,5  -->  Q3
+-- 6,7,8 -->   Q4
+
+
+select * from fact_sales_monthly 
+where customer_code=90002002 AND GET_FISCAL_YEAR(date)
+ = 2021 
+ AND GET_FISCAL_QUARTER(DATE)="q4"
+order by date DESC ;
+
+SELECT fs.date,fs.product_code, dp.product
+,dp.variant,fs.sold_quantity,fg.gross_price,
+fg.gross_price*fs.sold_quantity as gross_price_total
+ FROM fact_sales_monthly FS
+join dim_product dp on fs.product_code=dp.product_code
+join fact_gross_price fg on fs.product_code=fg.product_code
+and fg.fiscal_year=get_fiscal_year(fs.date)
+where customer_code=90002002 AND
+ GET_FISCAL_YEAR(date)
+ = 2021 
+ order by date;
+
+
+# As a product owner i want to generate a report of idividual product sales
+-- aggregated on a monthly basis at the product code level for croma for FY=2021
+-- SO that i can track individual product sales and run further product analytics on excel
+
+# the report should have the following fields.
+
+-- 1. Month
+-- 2. product name
+-- 3. variant
+-- 4. sold quantity
+-- 5. gross price per item
+-- 6. gross price total
+
+
+select year(fs.date), d.product_code,d.product,d.variant,fs.sold_quantity,g.gross_price,
+round(fs.sold_quantity*g.gross_price,2) as total_gross_price
+ from 
+fact_sales_monthly fs join
+dim_product d on fs.product_code=d.product_code
+join fact_gross_price g on fs.product_code=g.product_code
+and g.fiscal_year=get_fiscal_year(fs.date)
+   where customer_code=90002002
+and GET_FISCAL_YEAR(DATE)=2021
+
+order by date ;
+
+
+select year(fs.date) as year , 
+round(sum(fs.sold_quantity*g.gross_price),2) as total_gross_price
+ from 
+fact_sales_monthly fs join
+dim_product d on fs.product_code=d.product_code
+join fact_gross_price g on fs.product_code=g.product_code
+and g.fiscal_year=get_fiscal_year(fs.date)
+   where customer_code=90002002
+group by year;
+
+
+
+
